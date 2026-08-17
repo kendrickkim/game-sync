@@ -18,6 +18,25 @@ npm start
 npm run dev
 ```
 
+## PM2 배포
+
+```bash
+pm2 start ecosystem.config.cjs
+pm2 save
+```
+
+이미 `watch`가 켜진 상태로 돌고 있다면 SQLite WAL 파일 변경 때문에 **SIGINT → 재시작**이 반복됩니다. 아래처럼 워치를 끄세요.
+
+```bash
+pm2 delete gamesync-server
+pm2 start ecosystem.config.cjs
+# 또는 기존 프로세스만 고칠 때:
+pm2 stop gamesync-server
+pm2 restart gamesync-server --watch false
+```
+
+코드 변경 감지가 필요하면 `ecosystem.config.cjs`에서 `watch: true`로 바꾸되, `ignore_watch`의 `data` / `uploads`는 반드시 유지하세요.
+
 ## 환경 변수
 
 | 변수 | 기본값 | 설명 |
