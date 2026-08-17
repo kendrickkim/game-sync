@@ -887,25 +887,7 @@ public sealed class MainForm : Form
         return DateTimeOffset.FromUnixTimeMilliseconds(ms).LocalDateTime.ToString("yyyy-MM-dd HH:mm:ss");
     }
 
-    private static Icon? LoadAppIcon()
-    {
-        try
-        {
-            var path = Path.Combine(AppContext.BaseDirectory, "Assets", "app.ico");
-            if (File.Exists(path))
-            {
-                return new Icon(path);
-            }
-
-            // Fallback: embedded beside exe via ApplicationIcon is already on the process;
-            // use executable icon when Assets copy is missing.
-            return Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-        }
-        catch
-        {
-            return null;
-        }
-    }
+    private static Icon? LoadAppIcon() => AppIcon.Value;
 
     protected override void OnFormClosed(FormClosedEventArgs e)
     {

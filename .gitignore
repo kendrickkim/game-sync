@@ -16,6 +16,7 @@ server/*.sqlite-wal
 # Client
 client/bin/
 client/obj/
+client/publish/
 client/.vs/
 client/*.user
 client/*.suo

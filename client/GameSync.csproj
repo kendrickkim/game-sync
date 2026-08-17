@@ -8,15 +8,17 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationDefaultFont>Segoe UI, 10pt</ApplicationDefaultFont>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <AssemblyName>GameSync</AssemblyName>
+    <Product>Game Sync</Product>
+    <Version>1.0.0</Version>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <SatelliteResourceLanguages>en;ko</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Update="Assets\app.ico">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\gamesync-icon.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <!-- Embedded so the icon survives a single-file publish, where loose files are dropped. -->
+    <EmbeddedResource Include="Assets\app.ico" LogicalName="GameSync.Assets.app.ico" />
   </ItemGroup>
 
 </Project>

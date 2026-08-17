@@ -24,22 +24,7 @@ public sealed class LoginForm : Form
         MinimizeBox = false;
         StartPosition = FormStartPosition.CenterScreen;
         ClientSize = new Size(440, 330);
-        try
-        {
-            var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "app.ico");
-            if (File.Exists(iconPath))
-            {
-                Icon = new Icon(iconPath);
-            }
-            else
-            {
-                Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-            }
-        }
-        catch
-        {
-            // ignore icon load failures
-        }
+        Icon = AppIcon.Value;
 
         const int fieldHeight = 36;
         const int buttonHeight = 40;

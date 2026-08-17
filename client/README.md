@@ -14,6 +14,21 @@ dotnet build
 dotnet run
 ```
 
+## 배포용 빌드
+
+.NET 설치 없이 실행 가능한 단일 exe를 만듭니다.
+
+```bash
+dotnet publish GameSync.csproj -c Release -r win-x64 --self-contained true \
+  -p:PublishSingleFile=true \
+  -p:IncludeNativeLibrariesForSelfExtract=true \
+  -p:EnableCompressionInSingleFile=true \
+  -p:DebugType=none \
+  -o publish/GameSync-win-x64
+```
+
+아이콘은 어셈블리에 임베드되어 있어 단일 파일 배포에서도 그대로 표시됩니다.
+
 ## 기능
 
 - 계정 로그인 / 회원가입
