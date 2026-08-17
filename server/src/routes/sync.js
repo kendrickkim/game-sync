@@ -4,19 +4,21 @@ const path = require('path');
 const multer = require('multer');
 const { db } = require('../db/sqlite');
 const { authRequired } = require('../middleware/auth');
+const { getUploadDir, ensureUploadDir } = require('../config/paths');
 
 const router = express.Router();
 router.use(authRequired);
 
-const serverRoot = path.join(__dirname, '..', '..');
-const configuredUploadDir = process.env.UPLOAD_DIR || 'uploads';
-const uploadDir = path.isAbsolute(configuredUploadDir)
-  ? configuredUploadDir
-  : path.resolve(serverRoot, configuredUploadDir);
-fs.mkdirSync(uploadDir, { recursive: true });
+ensureUploadDir();
 
 const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
+  destination: (_req, _file, cb) => {
+    try {
+      cb(null, ensureUploadDir());
+    } catch (err) {
+      cb(err);
+    }
+  },
   filename: (_req, _file, cb) => {
     const safe = `${Date.now()}-${Math.round(Math.random() * 1e9)}.zip`;
     cb(null, safe);
@@ -181,9 +183,10 @@ router.get('/download/:entryId', (req, res) => {
       return res.status(404).json({ error: 'Sync entry not found' });
     }
 
-    const filePath = path.join(uploadDir, entry.zipFilename);
+    const filePath = path.join(getUploadDir(), entry.zipFilename);
     if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: 'Zip file missing on server' });
+      console.error(`download: zip missing at ${filePath}`);
+      return res.status(404).json({ error: `Zip file missing on server: ${entry.zipFilename}` });
     }
 
     res.setHeader('Content-Type', 'application/zip');
@@ -214,7 +217,7 @@ router.delete('/:entryId', (req, res) => {
     }
 
     db.prepare('DELETE FROM sync_entries WHERE id = @entryId').run({ entryId });
-    const zipPath = path.join(uploadDir, entry.zipFilename);
+    const zipPath = path.join(getUploadDir(), entry.zipFilename);
     fs.unlink(zipPath, () => {});
 
     return res.status(204).send();

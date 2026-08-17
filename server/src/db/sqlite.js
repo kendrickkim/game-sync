@@ -1,12 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
+const { getDbPath } = require('../config/paths');
 
-const serverRoot = path.join(__dirname, '..', '..');
-const configuredPath = process.env.SQLITE_PATH || path.join('data', 'game_sync.sqlite');
-const dbPath = path.isAbsolute(configuredPath)
-  ? configuredPath
-  : path.resolve(serverRoot, configuredPath);
+const dbPath = getDbPath();
 
 fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 

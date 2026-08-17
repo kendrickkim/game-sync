@@ -1,12 +1,12 @@
 const path = require('path');
-const fs = require('fs');
 const dotenv = require('dotenv');
 
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 const express = require('express');
 const cors = require('cors');
-const { dbPath } = require('./db/sqlite');
+const { db, dbPath } = require('./db/sqlite');
+const { serverRoot, getUploadDir, ensureUploadDir } = require('./config/paths');
 
 const authRoutes = require('./routes/auth');
 const gamesRoutes = require('./routes/games');
@@ -19,19 +19,21 @@ if (!process.env.JWT_SECRET) {
   process.env.JWT_SECRET = 'dev-insecure-secret-change-me';
 }
 
-const serverRoot = path.join(__dirname, '..');
-const configuredUploadDir = process.env.UPLOAD_DIR || 'uploads';
-const uploadDir = path.isAbsolute(configuredUploadDir)
-  ? configuredUploadDir
-  : path.resolve(serverRoot, configuredUploadDir);
-fs.mkdirSync(uploadDir, { recursive: true });
+const uploadDir = ensureUploadDir();
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
 
 app.get('/health', (_req, res) => {
-  res.json({ ok: true, db: 'sqlite', dbPath });
+  res.json({
+    ok: true,
+    db: 'sqlite',
+    dbPath,
+    uploadDir: getUploadDir(),
+    serverRoot,
+    cwd: process.cwd(),
+  });
 });
 
 app.use('/auth', authRoutes);
@@ -46,7 +48,47 @@ app.use((err, _req, res, _next) => {
 });
 
 const port = Number(process.env.PORT || 3000);
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Game Sync server listening on http://localhost:${port}`);
-  console.log(`SQLite: ${dbPath}`);
+  console.log(`PID:     ${process.pid}`);
+  console.log(`SQLite:  ${dbPath}`);
+  console.log(`Uploads: ${uploadDir}`);
+  console.log(`Cwd:     ${process.cwd()}`);
+});
+
+let shuttingDown = false;
+
+function shutdown(reason) {
+  if (shuttingDown) {
+    return;
+  }
+  shuttingDown = true;
+
+  const uptime = process.uptime().toFixed(1);
+  console.log(`Shutting down: ${reason} (uptime ${uptime}s, pid ${process.pid})`);
+
+  server.close(() => {
+    try {
+      db.close();
+    } catch (err) {
+      console.error('failed to close database', err);
+    }
+    process.exit(0);
+  });
+
+  // Do not hang forever on lingering keep-alive connections.
+  setTimeout(() => process.exit(0), 5000).unref();
+}
+
+for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGQUIT']) {
+  process.on(signal, () => shutdown(`received ${signal}`));
+}
+
+process.on('uncaughtException', (err) => {
+  console.error('uncaughtException', err);
+  shutdown('uncaughtException');
+});
+
+process.on('unhandledRejection', (err) => {
+  console.error('unhandledRejection', err);
 });
