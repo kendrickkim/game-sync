@@ -19,7 +19,11 @@ if (!process.env.JWT_SECRET) {
   process.env.JWT_SECRET = 'dev-insecure-secret-change-me';
 }
 
-const uploadDir = path.resolve(process.env.UPLOAD_DIR || 'uploads');
+const serverRoot = path.join(__dirname, '..');
+const configuredUploadDir = process.env.UPLOAD_DIR || 'uploads';
+const uploadDir = path.isAbsolute(configuredUploadDir)
+  ? configuredUploadDir
+  : path.resolve(serverRoot, configuredUploadDir);
 fs.mkdirSync(uploadDir, { recursive: true });
 
 const app = express();

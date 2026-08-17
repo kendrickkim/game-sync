@@ -8,7 +8,11 @@ const { authRequired } = require('../middleware/auth');
 const router = express.Router();
 router.use(authRequired);
 
-const uploadDir = path.resolve(process.env.UPLOAD_DIR || 'uploads');
+const serverRoot = path.join(__dirname, '..', '..');
+const configuredUploadDir = process.env.UPLOAD_DIR || 'uploads';
+const uploadDir = path.isAbsolute(configuredUploadDir)
+  ? configuredUploadDir
+  : path.resolve(serverRoot, configuredUploadDir);
 fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({

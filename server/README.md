@@ -20,19 +20,30 @@ npm run dev
 
 ## PM2 배포
 
+한 프로세스만 띄우세요. 이름이 다른 앱이 동시에 돌면 포트 3000을 두고 충돌하거나 재시작이 꼬일 수 있습니다.
+
 ```bash
+cd /root/game-sync-server
+pm2 delete gamesync gamesync-server 2>/dev/null || true
 pm2 start ecosystem.config.cjs
 pm2 save
+pm2 status
+pm2 show gamesync-server | grep -i watch
 ```
 
-이미 `watch`가 켜진 상태로 돌고 있다면 SQLite WAL 파일 변경 때문에 **SIGINT → 재시작**이 반복됩니다. 아래처럼 워치를 끄세요.
+`watch` 값이 `enabled`이면 SQLite WAL 변경 때문에 **SIGINT → 재시작**이 반복됩니다.  
+`pm2 restart ... --watch false`로는 기존 watch가 안 꺼지는 경우가 많으니, 위처럼 **delete 후 다시 start** 하세요.
+
+확인:
 
 ```bash
-pm2 delete gamesync-server
-pm2 start ecosystem.config.cjs
-# 또는 기존 프로세스만 고칠 때:
-pm2 stop gamesync-server
-pm2 restart gamesync-server --watch false
+# watch 가 꺼져 있어야 함
+pm2 describe gamesync-server | grep -i watch
+
+# 재시작 카운트가 더 이상 안 올라가야 함
+pm2 monit
+# 또는
+pm2 status
 ```
 
 코드 변경 감지가 필요하면 `ecosystem.config.cjs`에서 `watch: true`로 바꾸되, `ignore_watch`의 `data` / `uploads`는 반드시 유지하세요.
@@ -44,7 +55,7 @@ pm2 restart gamesync-server --watch false
 | `PORT` | `3000` | API 포트 |
 | `JWT_SECRET` | (개발용 기본값) | JWT 서명 키 |
 | `SQLITE_PATH` | `data/game_sync.sqlite` | SQLite DB 경로 |
-| `UPLOAD_DIR` | `uploads` | zip 저장 디렉토리 |
+| `UPLOAD_DIR` | `uploads` | zip 저장 디렉토리 (`server/` 기준 상대경로 또는 절대경로) |
 
 ## API 개요
 
