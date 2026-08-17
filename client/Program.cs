@@ -1,3 +1,4 @@
+using System.Threading;
 using GameSync.Forms;
 using GameSync.Services;
 
@@ -5,9 +6,22 @@ namespace GameSync;
 
 static class Program
 {
+    private const string SingleInstanceMutexName = "Local\\GameSync.WinForms.SingleInstance";
+
     [STAThread]
     static void Main()
     {
+        using var mutex = new Mutex(true, SingleInstanceMutexName, out var createdNew);
+        if (!createdNew)
+        {
+            MessageBox.Show(
+                "Game Sync가 이미 실행 중입니다.",
+                "Game Sync",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+            return;
+        }
+
         ApplicationConfiguration.Initialize();
 
         var config = ConfigStore.Load();
@@ -19,7 +33,6 @@ static class Program
             api.SetToken(config.Token);
             try
             {
-                // Fire-and-forget validation in UI thread with wait
                 var task = api.GetGamesAsync();
                 task.GetAwaiter().GetResult();
                 Application.Run(new MainForm(config, api));

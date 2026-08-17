@@ -15,9 +15,16 @@ public sealed class MainForm : Form
     private readonly TextBox _txtLog;
     private readonly Label _lblUser;
     private readonly Label _lblComputer;
+    private readonly ComboBox _cmbRemoteComputer;
+    private readonly System.Windows.Forms.Timer _remoteCommandTimer;
+    private readonly NotifyIcon _trayIcon;
+    private readonly ContextMenuStrip _trayMenu;
 
     private List<GameInfo> _games = new();
     private List<SyncEntry> _entries = new();
+    private List<ComputerInfo> _computers = new();
+    private bool _checkingRemoteCommands;
+    private bool _exitRequested;
 
     public MainForm(AppConfig config, ApiClient api)
     {
@@ -26,8 +33,8 @@ public sealed class MainForm : Form
 
         Text = "Game Sync";
         StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(960, 680);
-        ClientSize = new Size(980, 700);
+        MinimumSize = new Size(960, 740);
+        ClientSize = new Size(980, 720);
         Icon = LoadAppIcon();
 
         const int controlHeight = 36;
@@ -56,29 +63,29 @@ public sealed class MainForm : Form
         };
         btnLogout.Click += (_, _) => Logout();
 
-        var lblGame = new Label { Text = "게임", Location = new Point(16, 58), AutoSize = true };
+        var lblGame = new Label { Text = "게임", Location = new Point(16, 56), AutoSize = true };
         _cmbGames = new ComboBox
         {
-            Location = new Point(16, 82),
+            Location = new Point(16, 86),
             Size = new Size(280, controlHeight),
             DropDownStyle = ComboBoxStyle.DropDownList,
             FlatStyle = FlatStyle.System,
         };
         _cmbGames.SelectedIndexChanged += (_, _) => OnGameSelected();
 
-        var btnAddGame = new Button { Text = "게임 추가", Location = new Point(308, 82), Size = new Size(120, controlHeight) };
+        var btnAddGame = new Button { Text = "게임 추가", Location = new Point(308, 86), Size = new Size(120, controlHeight) };
         btnAddGame.Click += async (_, _) => await AddGameAsync();
 
-        var btnDeleteGame = new Button { Text = "게임 삭제", Location = new Point(436, 82), Size = new Size(120, controlHeight) };
+        var btnDeleteGame = new Button { Text = "게임 삭제", Location = new Point(436, 86), Size = new Size(120, controlHeight) };
         btnDeleteGame.Click += async (_, _) => await DeleteGameAsync();
 
-        var btnRefresh = new Button { Text = "새로고침", Location = new Point(564, 82), Size = new Size(120, controlHeight) };
+        var btnRefresh = new Button { Text = "새로고침", Location = new Point(564, 86), Size = new Size(120, controlHeight) };
         btnRefresh.Click += async (_, _) => await RefreshAllAsync();
 
-        var lblPath = new Label { Text = "로컬 디렉토리", Location = new Point(16, 132), AutoSize = true };
+        var lblPath = new Label { Text = "로컬 디렉토리", Location = new Point(16, 138), AutoSize = true };
         _txtLocalPath = new TextBox
         {
-            Location = new Point(16, 156),
+            Location = new Point(16, 168),
             Size = new Size(680, controlHeight),
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
         };
@@ -86,7 +93,7 @@ public sealed class MainForm : Form
         var btnBrowse = new Button
         {
             Text = "찾아보기",
-            Location = new Point(708, 156),
+            Location = new Point(708, 168),
             Size = new Size(112, controlHeight),
             Anchor = AnchorStyles.Top | AnchorStyles.Right,
         };
@@ -95,7 +102,7 @@ public sealed class MainForm : Form
         var btnSavePath = new Button
         {
             Text = "경로 저장",
-            Location = new Point(828, 156),
+            Location = new Point(828, 168),
             Size = new Size(112, controlHeight),
             Anchor = AnchorStyles.Top | AnchorStyles.Right,
         };
@@ -104,7 +111,7 @@ public sealed class MainForm : Form
         var btnUpload = new Button
         {
             Text = "업로드",
-            Location = new Point(16, 208),
+            Location = new Point(16, 220),
             Size = new Size(110, actionHeight),
         };
         btnUpload.Click += async (_, _) => await UploadAsync();
@@ -112,7 +119,7 @@ public sealed class MainForm : Form
         var btnDownload = new Button
         {
             Text = "선택 다운로드",
-            Location = new Point(138, 208),
+            Location = new Point(138, 220),
             Size = new Size(160, actionHeight),
         };
         btnDownload.Click += async (_, _) => await DownloadSelectedAsync();
@@ -120,7 +127,7 @@ public sealed class MainForm : Form
         var btnDeleteEntry = new Button
         {
             Text = "기록 삭제",
-            Location = new Point(310, 208),
+            Location = new Point(310, 220),
             Size = new Size(120, actionHeight),
         };
         btnDeleteEntry.Click += async (_, _) => await DeleteSelectedAsync();
@@ -128,22 +135,44 @@ public sealed class MainForm : Form
         var btnRefreshList = new Button
         {
             Text = "기록 새로고침",
-            Location = new Point(442, 208),
+            Location = new Point(442, 220),
             Size = new Size(160, actionHeight),
         };
         btnRefreshList.Click += async (_, _) => await LoadEntriesAsync();
 
+        var lblRemoteComputer = new Label
+        {
+            Text = "원격 업로드 대상",
+            Location = new Point(16, 278),
+            AutoSize = true,
+        };
+
+        _cmbRemoteComputer = new ComboBox
+        {
+            Location = new Point(16, 308),
+            Size = new Size(380, controlHeight),
+            DropDownStyle = ComboBoxStyle.DropDownList,
+        };
+
+        var btnRemoteUpload = new Button
+        {
+            Text = "원격 업로드 요청",
+            Location = new Point(412, 304),
+            Size = new Size(200, actionHeight),
+        };
+        btnRemoteUpload.Click += async (_, _) => await RequestRemoteUploadAsync();
+
         var lblHistory = new Label
         {
             Text = "업로드 기록 (행을 선택한 뒤 다운로드)",
-            Location = new Point(16, 256),
+            Location = new Point(16, 364),
             AutoSize = true,
         };
 
         _lvEntries = new ListView
         {
-            Location = new Point(16, 282),
-            Size = new Size(948, 212),
+            Location = new Point(16, 394),
+            Size = new Size(948, 150),
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
             View = View.Details,
             FullRowSelect = true,
@@ -162,15 +191,15 @@ public sealed class MainForm : Form
         var lblLog = new Label
         {
             Text = "로그",
-            Location = new Point(16, 508),
+            Location = new Point(16, 556),
             AutoSize = true,
             Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
         };
 
         _txtLog = new TextBox
         {
-            Location = new Point(16, 532),
-            Size = new Size(948, 148),
+            Location = new Point(16, 584),
+            Size = new Size(948, 96),
             Multiline = true,
             ScrollBars = ScrollBars.Vertical,
             ReadOnly = true,
@@ -183,8 +212,32 @@ public sealed class MainForm : Form
             lblGame, _cmbGames, btnAddGame, btnDeleteGame, btnRefresh,
             lblPath, _txtLocalPath, btnBrowse, btnSavePath,
             btnUpload, btnDownload, btnDeleteEntry, btnRefreshList,
+            lblRemoteComputer, _cmbRemoteComputer, btnRemoteUpload,
             lblHistory, _lvEntries, lblLog, _txtLog,
         });
+
+        _remoteCommandTimer = new System.Windows.Forms.Timer
+        {
+            Interval = 10_000,
+        };
+        _remoteCommandTimer.Tick += async (_, _) => await CheckRemoteCommandsAsync();
+
+        _trayMenu = new ContextMenuStrip();
+        _trayMenu.Items.Add("열기", null, (_, _) => RestoreFromTray());
+        _trayMenu.Items.Add(new ToolStripSeparator());
+        _trayMenu.Items.Add("종료", null, (_, _) => ExitApplication());
+
+        _trayIcon = new NotifyIcon
+        {
+            Text = "Game Sync",
+            Icon = Icon ?? SystemIcons.Application,
+            Visible = true,
+            ContextMenuStrip = _trayMenu,
+        };
+        _trayIcon.DoubleClick += (_, _) => RestoreFromTray();
+
+        FormClosing += MainForm_FormClosing;
+        Resize += MainForm_Resize;
 
         Shown += async (_, _) => await InitializeAsync();
     }
@@ -195,6 +248,7 @@ public sealed class MainForm : Form
         {
             await _api.RegisterComputerAsync(_computerName);
             await RefreshAllAsync();
+            _remoteCommandTimer.Start();
             Log($"준비 완료. 컴퓨터 '{_computerName}' 등록됨.");
         }
         catch (Exception ex)
@@ -210,6 +264,7 @@ public sealed class MainForm : Form
         {
             var selectedId = SelectedGame?.Id;
             _games = await _api.GetGamesAsync();
+            await LoadComputersAsync();
             _cmbGames.Items.Clear();
             foreach (var game in _games)
             {
@@ -234,6 +289,30 @@ public sealed class MainForm : Form
         {
             Log("새로고침 실패: " + ex.Message);
         }
+    }
+
+    private async Task LoadComputersAsync()
+    {
+        var selectedId = (_cmbRemoteComputer.SelectedItem as ComputerInfo)?.Id;
+        _computers = await _api.GetComputersAsync();
+
+        _cmbRemoteComputer.Items.Clear();
+        foreach (var computer in _computers.Where(c =>
+                     !string.Equals(c.Name, _computerName, StringComparison.OrdinalIgnoreCase)))
+        {
+            _cmbRemoteComputer.Items.Add(computer);
+        }
+
+        if (_cmbRemoteComputer.Items.Count == 0)
+        {
+            return;
+        }
+
+        var selected = _computers.FirstOrDefault(c => c.Id == selectedId);
+        _cmbRemoteComputer.SelectedItem = selected is not null &&
+                                          !string.Equals(selected.Name, _computerName, StringComparison.OrdinalIgnoreCase)
+            ? selected
+            : _cmbRemoteComputer.Items[0];
     }
 
     private GameInfo? SelectedGame => _cmbGames.SelectedItem as GameInfo;
@@ -398,6 +477,124 @@ public sealed class MainForm : Form
         Log($"경로 저장: {game.Name} -> {path}");
     }
 
+    private async Task RequestRemoteUploadAsync()
+    {
+        var game = SelectedGame;
+        var target = _cmbRemoteComputer.SelectedItem as ComputerInfo;
+        if (game is null || target is null)
+        {
+            MessageBox.Show(
+                this,
+                "게임과 원격 컴퓨터를 선택하세요.",
+                "원격 업로드",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+            return;
+        }
+
+        var onlineWarning = target.IsOnline
+            ? ""
+            : "\n\n현재 오프라인입니다. 클라이언트가 실행되면 요청을 처리합니다.";
+        var confirm = MessageBox.Show(
+            this,
+            $"'{target.Name}' 컴퓨터에 '{game.Name}' 업로드를 요청할까요?{onlineWarning}",
+            "원격 업로드 요청",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Question);
+        if (confirm != DialogResult.Yes)
+        {
+            return;
+        }
+
+        try
+        {
+            var request = await _api.CreateRemoteUploadRequestAsync(
+                game.Id,
+                target.Id,
+                _computerName);
+            Log($"원격 업로드 요청 완료. 요청 ID={request.Id}, 대상={target.Name}, 게임={game.Name}");
+        }
+        catch (Exception ex)
+        {
+            Log("원격 업로드 요청 실패: " + ex.Message);
+            MessageBox.Show(this, ex.Message, "원격 업로드 실패", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private async Task CheckRemoteCommandsAsync()
+    {
+        if (_checkingRemoteCommands || IsDisposed)
+        {
+            return;
+        }
+
+        _checkingRemoteCommands = true;
+        try
+        {
+            await _api.SendHeartbeatAsync(_computerName);
+            var requests = await _api.GetPendingRemoteUploadsAsync(_computerName);
+            foreach (var request in requests)
+            {
+                await ExecuteRemoteUploadAsync(request);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log("원격 명령 확인 실패: " + ex.Message);
+        }
+        finally
+        {
+            _checkingRemoteCommands = false;
+        }
+    }
+
+    private async Task ExecuteRemoteUploadAsync(RemoteUploadRequest request)
+    {
+        try
+        {
+            await _api.ClaimRemoteUploadAsync(request.Id, _computerName);
+        }
+        catch
+        {
+            return;
+        }
+
+        Log(
+            $"원격 업로드 요청 수신. 요청 ID={request.Id}, " +
+            $"요청 PC={request.RequesterComputerName}, 게임={request.GameName}");
+
+        try
+        {
+            if (!_config.GameLocalPaths.TryGetValue(request.GameId, out var localPath) ||
+                string.IsNullOrWhiteSpace(localPath) ||
+                !Directory.Exists(localPath))
+            {
+                throw new DirectoryNotFoundException(
+                    $"'{request.GameName}'의 로컬 디렉토리가 이 컴퓨터에 설정되지 않았습니다.");
+            }
+
+            var game = _games.FirstOrDefault(g => g.Id == request.GameId)
+                       ?? new GameInfo { Id = request.GameId, Name = request.GameName };
+            var localMtime = ZipHelper.GetDirectoryContentMtime(localPath);
+            var entry = await DoUploadAsync(game, localPath, localMtime);
+            await _api.CompleteRemoteUploadAsync(request.Id, _computerName, entry.Id);
+            Log($"원격 업로드 완료. 요청 ID={request.Id}, 기록 ID={entry.Id}");
+        }
+        catch (Exception ex)
+        {
+            try
+            {
+                await _api.FailRemoteUploadAsync(request.Id, _computerName, ex.Message);
+            }
+            catch (Exception reportEx)
+            {
+                Log("원격 업로드 실패 상태 전송 실패: " + reportEx.Message);
+            }
+
+            Log($"원격 업로드 실패. 요청 ID={request.Id}: {ex.Message}");
+        }
+    }
+
     private async Task UploadAsync()
     {
         var game = SelectedGame;
@@ -428,7 +625,7 @@ public sealed class MainForm : Form
         }
     }
 
-    private async Task DoUploadAsync(GameInfo game, string localPath, long localMtime)
+    private async Task<SyncEntry> DoUploadAsync(GameInfo game, string localPath, long localMtime)
     {
         Log($"압축 중: {localPath}");
         var zipPath = ZipHelper.CreateZipFromDirectory(localPath);
@@ -439,6 +636,7 @@ public sealed class MainForm : Form
             Log($"업로드 완료. 기록 ID={entry.Id}, size={FormatSize(entry.FileSize)}");
             await LoadEntriesAsync();
             SelectEntryById(entry.Id);
+            return entry;
         }
         finally
         {
@@ -565,6 +763,10 @@ public sealed class MainForm : Form
     {
         _config.Token = null;
         ConfigStore.Save(_config);
+
+        // Prevent tray hide while swapping session windows.
+        _exitRequested = true;
+        _trayIcon.Visible = false;
         Hide();
 
         using var login = new LoginForm(_config);
@@ -576,6 +778,63 @@ public sealed class MainForm : Form
             return;
         }
 
+        Close();
+    }
+
+    private void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
+    {
+        if (_exitRequested)
+        {
+            return;
+        }
+
+        if (e.CloseReason == CloseReason.UserClosing)
+        {
+            e.Cancel = true;
+            HideToTray();
+        }
+    }
+
+    private void MainForm_Resize(object? sender, EventArgs e)
+    {
+        if (_exitRequested)
+        {
+            return;
+        }
+
+        if (WindowState == FormWindowState.Minimized)
+        {
+            HideToTray();
+        }
+    }
+
+    private void HideToTray()
+    {
+        Hide();
+        ShowInTaskbar = false;
+        if (_trayIcon.Visible)
+        {
+            _trayIcon.ShowBalloonTip(
+                2000,
+                "Game Sync",
+                "백그라운드에서 계속 실행 중입니다. 트레이 아이콘에서 열거나 종료할 수 있습니다.",
+                ToolTipIcon.Info);
+        }
+    }
+
+    private void RestoreFromTray()
+    {
+        ShowInTaskbar = true;
+        Show();
+        WindowState = FormWindowState.Normal;
+        Activate();
+        BringToFront();
+    }
+
+    private void ExitApplication()
+    {
+        _exitRequested = true;
+        _trayIcon.Visible = false;
         Close();
     }
 
@@ -650,6 +909,11 @@ public sealed class MainForm : Form
 
     protected override void OnFormClosed(FormClosedEventArgs e)
     {
+        _remoteCommandTimer.Stop();
+        _remoteCommandTimer.Dispose();
+        _trayIcon.Visible = false;
+        _trayIcon.Dispose();
+        _trayMenu.Dispose();
         _api.Dispose();
         base.OnFormClosed(e);
     }

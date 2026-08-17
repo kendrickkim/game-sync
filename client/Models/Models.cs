@@ -40,6 +40,52 @@ public sealed class ComputerInfo
 
     [JsonPropertyName("name")]
     public string Name { get; set; } = "";
+
+    [JsonPropertyName("lastSeenAt")]
+    [JsonConverter(typeof(FlexibleNullableDateTimeConverter))]
+    public DateTime? LastSeenAt { get; set; }
+
+    [JsonPropertyName("isOnline")]
+    public int IsOnlineValue { get; set; }
+
+    [JsonIgnore]
+    public bool IsOnline => IsOnlineValue == 1;
+
+    public override string ToString() => $"{Name} {(IsOnline ? "(온라인)" : "(오프라인)")}";
+}
+
+public sealed class RemoteUploadRequest
+{
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+
+    [JsonPropertyName("gameId")]
+    public int GameId { get; set; }
+
+    [JsonPropertyName("gameName")]
+    public string GameName { get; set; } = "";
+
+    [JsonPropertyName("requesterComputerName")]
+    public string RequesterComputerName { get; set; } = "";
+
+    [JsonPropertyName("targetComputerId")]
+    public int TargetComputerId { get; set; }
+
+    [JsonPropertyName("targetComputerName")]
+    public string TargetComputerName { get; set; } = "";
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = "";
+
+    [JsonPropertyName("syncEntryId")]
+    public int? SyncEntryId { get; set; }
+
+    [JsonPropertyName("message")]
+    public string? Message { get; set; }
+
+    [JsonPropertyName("createdAt")]
+    [JsonConverter(typeof(FlexibleNullableDateTimeConverter))]
+    public DateTime? CreatedAt { get; set; }
 }
 
 public sealed class SyncEntry

@@ -12,6 +12,7 @@ const authRoutes = require('./routes/auth');
 const gamesRoutes = require('./routes/games');
 const computersRoutes = require('./routes/computers');
 const syncRoutes = require('./routes/sync');
+const remoteUploadRoutes = require('./routes/remoteUploads');
 
 if (!process.env.JWT_SECRET) {
   console.warn('Warning: JWT_SECRET is not set. Using insecure default for development only.');
@@ -33,6 +34,7 @@ app.use('/auth', authRoutes);
 app.use('/games', gamesRoutes);
 app.use('/computers', computersRoutes);
 app.use('/sync', syncRoutes);
+app.use('/remote-uploads', remoteUploadRoutes);
 
 app.use((err, _req, res, _next) => {
   console.error('unhandled error', err);

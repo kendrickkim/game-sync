@@ -1,45 +1,62 @@
 # Game Sync
 
-여러 PC의 게임 세이브 디렉토리를 zip으로 동기화하는 프로젝트입니다.
+여러 PC의 게임 세이브 디렉토리를 zip으로 압축해 서버에 올리고, 필요할 때 내려받아 동기화하는 도구입니다.
 
-| 폴더 | 설명 | Git |
-|------|------|-----|
-| [server/](server/) | Node.js 20+ + **SQLite** API | 별도 repository |
-| [client/](client/) | .NET 8 WinForms 클라이언트 | 별도 repository |
+컴퓨터마다 세이브 경로가 달라도 계정·게임 단위로 매핑해 관리합니다.
+
+## 구성
+
+| 폴더 | GitHub | 설명 |
+|------|--------|------|
+| [server/](server/) | https://github.com/kendrickkim/game-sync-server | Node.js 20 + Express + SQLite API |
+| [client/](client/) | https://github.com/kendrickkim/game-sync-client | .NET 8 WinForms 클라이언트 |
+
+## 주요 기능
+
+- **계정 로그인 / 회원가입** — JWT 인증
+- **게임별 로컬 경로 매핑** — PC마다 다른 세이브 폴더 지정 가능
+- **수동 업로드 / 다운로드** — 업로드마다 기록이 남고, 기록을 골라 다운로드
+- **원격 업로드 요청** — 같은 계정으로 로그인된 다른 PC에 업로드 요청
+- **트레이 상주** — 창을 닫아도 트레이로 최소화, 중복 실행 방지
 
 ## 빠른 시작
 
-1. `cd server && npm install && npm start` (SQLite DB 자동 생성, 포트 3000)
-2. `cd client && dotnet run` (서버 URL 기본값 `http://localhost:3000`)
+### 1. 서버
 
-외부 MySQL/MariaDB는 사용하지 않습니다. DB 파일은 `server/data/game_sync.sqlite`에 저장됩니다.
-
-### install in docker container
 ```bash
-apt update
-apt install -y build-essential python3
-
-# install nvm 
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
-
-# restart container
-nvm install 20
-nvm use 20
-
-# install miot
+cd server
+cp .env.example .env   # 선택 (기본값으로도 동작)
 npm install
-
-# install pm2
-npm install -g pm2
-
+npm start              # 기본 포트 3000
 ```
 
-### container start script
-> insert below script to /bin/start script
+SQLite DB는 `server/data/game_sync.sqlite`에 자동 생성됩니다.
+
+### 2. 클라이언트
+
 ```bash
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
-pm2 resurrect
+cd client
+dotnet run
 ```
+
+로그인 화면에서 서버 URL 기본값은 `http://localhost:3000`입니다.
+
+## 사용 흐름
+
+1. 클라이언트에서 회원가입·로그인
+2. 게임을 추가하고, 이 PC의 세이브 디렉토리를 지정·저장
+3. **업로드**로 현재 세이브를 서버에 기록
+4. 다른 PC에서 같은 게임에 로컬 경로를 맞춘 뒤, 업로드 기록을 선택해 **다운로드**
+5. 원격 PC가 실행 중이면 **원격 업로드 요청**으로 그쪽 세이브를 끌어올 수 있음
+
+## 요구 사항
+
+| 구분 | 요구 사항 |
+|------|-----------|
+| 서버 | Node.js 20 이상 |
+| 클라이언트 | .NET 8 SDK (또는 Desktop Runtime) / Windows |
+
+## 상세 문서
+
+- [서버 README](server/README.md) — 환경 변수, API 목록
+- [클라이언트 README](client/README.md) — 빌드·기능·설정 위치

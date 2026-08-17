@@ -73,6 +73,78 @@ public sealed class ApiClient : IDisposable
         return await ReadAsync<ComputerInfo>(response, ct);
     }
 
+    public async Task<List<ComputerInfo>> GetComputersAsync(CancellationToken ct = default)
+    {
+        var response = await _http.GetAsync("computers", ct);
+        return await ReadAsync<List<ComputerInfo>>(response, ct);
+    }
+
+    public async Task SendHeartbeatAsync(string computerName, CancellationToken ct = default)
+    {
+        var response = await _http.PostAsJsonAsync("computers/heartbeat", new { name = computerName }, ct);
+        await EnsureSuccessAsync(response, ct);
+    }
+
+    public async Task<RemoteUploadRequest> CreateRemoteUploadRequestAsync(
+        int gameId,
+        int targetComputerId,
+        string requesterComputerName,
+        CancellationToken ct = default)
+    {
+        var response = await _http.PostAsJsonAsync(
+            "remote-uploads",
+            new { gameId, targetComputerId, requesterComputerName },
+            ct);
+        return await ReadAsync<RemoteUploadRequest>(response, ct);
+    }
+
+    public async Task<List<RemoteUploadRequest>> GetPendingRemoteUploadsAsync(
+        string computerName,
+        CancellationToken ct = default)
+    {
+        var encodedName = Uri.EscapeDataString(computerName);
+        var response = await _http.GetAsync($"remote-uploads/pending?computerName={encodedName}", ct);
+        return await ReadAsync<List<RemoteUploadRequest>>(response, ct);
+    }
+
+    public async Task ClaimRemoteUploadAsync(
+        int requestId,
+        string computerName,
+        CancellationToken ct = default)
+    {
+        var response = await _http.PostAsJsonAsync(
+            $"remote-uploads/{requestId}/claim",
+            new { computerName },
+            ct);
+        await EnsureSuccessAsync(response, ct);
+    }
+
+    public async Task CompleteRemoteUploadAsync(
+        int requestId,
+        string computerName,
+        int syncEntryId,
+        CancellationToken ct = default)
+    {
+        var response = await _http.PostAsJsonAsync(
+            $"remote-uploads/{requestId}/result",
+            new { computerName, status = "completed", syncEntryId },
+            ct);
+        await EnsureSuccessAsync(response, ct);
+    }
+
+    public async Task FailRemoteUploadAsync(
+        int requestId,
+        string computerName,
+        string message,
+        CancellationToken ct = default)
+    {
+        var response = await _http.PostAsJsonAsync(
+            $"remote-uploads/{requestId}/result",
+            new { computerName, status = "failed", message },
+            ct);
+        await EnsureSuccessAsync(response, ct);
+    }
+
     public async Task<List<SyncEntry>> GetSyncListAsync(int? gameId = null, CancellationToken ct = default)
     {
         var url = gameId is null ? "sync/list" : $"sync/list?gameId={gameId.Value}";
