@@ -1,0 +1,21 @@
+# Root
+.DS_Store
+Thumbs.db
+*.log
+db.info.env
+
+# Server
+server/node_modules/
+server/uploads/
+server/data/
+server/.env
+server/*.sqlite
+server/*.sqlite-shm
+server/*.sqlite-wal
+
+# Client
+client/bin/
+client/obj/
+client/.vs/
+client/*.user
+client/*.suo
