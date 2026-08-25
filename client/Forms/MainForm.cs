@@ -11,6 +11,7 @@ public sealed class MainForm : Form
 
     private readonly ComboBox _cmbGames;
     private readonly TextBox _txtLocalPath;
+    private readonly TextBox _txtExcludes;
     private readonly ListView _lvEntries;
     private readonly TextBox _txtLog;
     private readonly Label _lblUser;
@@ -33,8 +34,8 @@ public sealed class MainForm : Form
 
         Text = "Game Sync";
         StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(960, 740);
-        ClientSize = new Size(980, 720);
+        MinimumSize = new Size(960, 800);
+        ClientSize = new Size(980, 776);
         Icon = LoadAppIcon();
 
         const int controlHeight = 36;
@@ -43,14 +44,16 @@ public sealed class MainForm : Form
         _lblUser = new Label
         {
             AutoSize = true,
-            Location = new Point(16, 18),
+            UseCompatibleTextRendering = true,
+            Location = new Point(16, 16),
             Text = $"사용자: {config.Username}",
         };
 
         _lblComputer = new Label
         {
             AutoSize = true,
-            Location = new Point(220, 18),
+            UseCompatibleTextRendering = true,
+            Location = new Point(220, 16),
             Text = $"컴퓨터: {_computerName}",
         };
 
@@ -63,29 +66,29 @@ public sealed class MainForm : Form
         };
         btnLogout.Click += (_, _) => Logout();
 
-        var lblGame = new Label { Text = "게임", Location = new Point(16, 56), AutoSize = true };
+        var lblGame = new Label { Text = "게임", Location = new Point(16, 54), AutoSize = true, UseCompatibleTextRendering = true };
         _cmbGames = new ComboBox
         {
-            Location = new Point(16, 86),
+            Location = new Point(16, 92),
             Size = new Size(280, controlHeight),
             DropDownStyle = ComboBoxStyle.DropDownList,
             FlatStyle = FlatStyle.System,
         };
         _cmbGames.SelectedIndexChanged += (_, _) => OnGameSelected();
 
-        var btnAddGame = new Button { Text = "게임 추가", Location = new Point(308, 86), Size = new Size(120, controlHeight) };
+        var btnAddGame = new Button { Text = "게임 추가", Location = new Point(308, 92), Size = new Size(120, controlHeight) };
         btnAddGame.Click += async (_, _) => await AddGameAsync();
 
-        var btnDeleteGame = new Button { Text = "게임 삭제", Location = new Point(436, 86), Size = new Size(120, controlHeight) };
+        var btnDeleteGame = new Button { Text = "게임 삭제", Location = new Point(436, 92), Size = new Size(120, controlHeight) };
         btnDeleteGame.Click += async (_, _) => await DeleteGameAsync();
 
-        var btnRefresh = new Button { Text = "새로고침", Location = new Point(564, 86), Size = new Size(120, controlHeight) };
+        var btnRefresh = new Button { Text = "새로고침", Location = new Point(564, 92), Size = new Size(120, controlHeight) };
         btnRefresh.Click += async (_, _) => await RefreshAllAsync();
 
-        var lblPath = new Label { Text = "로컬 디렉토리", Location = new Point(16, 138), AutoSize = true };
+        var lblPath = new Label { Text = "로컬 디렉토리", Location = new Point(16, 136), AutoSize = true, UseCompatibleTextRendering = true };
         _txtLocalPath = new TextBox
         {
-            Location = new Point(16, 168),
+            Location = new Point(16, 176),
             Size = new Size(680, controlHeight),
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
         };
@@ -93,7 +96,7 @@ public sealed class MainForm : Form
         var btnBrowse = new Button
         {
             Text = "찾아보기",
-            Location = new Point(708, 168),
+            Location = new Point(708, 176),
             Size = new Size(112, controlHeight),
             Anchor = AnchorStyles.Top | AnchorStyles.Right,
         };
@@ -102,16 +105,34 @@ public sealed class MainForm : Form
         var btnSavePath = new Button
         {
             Text = "경로 저장",
-            Location = new Point(828, 168),
+            Location = new Point(828, 176),
             Size = new Size(112, controlHeight),
             Anchor = AnchorStyles.Top | AnchorStyles.Right,
         };
         btnSavePath.Click += (_, _) => SaveCurrentPath();
 
+        var lblExcludes = new Label { Text = "백업 제외", Location = new Point(16, 228), AutoSize = true, UseCompatibleTextRendering = true };
+        _txtExcludes = new TextBox
+        {
+            Location = new Point(16, 266),
+            Size = new Size(800, controlHeight),
+            ReadOnly = true,
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
+        };
+
+        var btnExcludes = new Button
+        {
+            Text = "제외 설정",
+            Location = new Point(828, 266),
+            Size = new Size(112, controlHeight),
+            Anchor = AnchorStyles.Top | AnchorStyles.Right,
+        };
+        btnExcludes.Click += (_, _) => EditExcludes();
+
         var btnUpload = new Button
         {
             Text = "업로드",
-            Location = new Point(16, 220),
+            Location = new Point(16, 312),
             Size = new Size(110, actionHeight),
         };
         btnUpload.Click += async (_, _) => await UploadAsync();
@@ -119,7 +140,7 @@ public sealed class MainForm : Form
         var btnDownload = new Button
         {
             Text = "선택 다운로드",
-            Location = new Point(138, 220),
+            Location = new Point(138, 312),
             Size = new Size(160, actionHeight),
         };
         btnDownload.Click += async (_, _) => await DownloadSelectedAsync();
@@ -127,7 +148,7 @@ public sealed class MainForm : Form
         var btnDeleteEntry = new Button
         {
             Text = "기록 삭제",
-            Location = new Point(310, 220),
+            Location = new Point(310, 312),
             Size = new Size(120, actionHeight),
         };
         btnDeleteEntry.Click += async (_, _) => await DeleteSelectedAsync();
@@ -135,7 +156,7 @@ public sealed class MainForm : Form
         var btnRefreshList = new Button
         {
             Text = "기록 새로고침",
-            Location = new Point(442, 220),
+            Location = new Point(442, 312),
             Size = new Size(160, actionHeight),
         };
         btnRefreshList.Click += async (_, _) => await LoadEntriesAsync();
@@ -143,13 +164,14 @@ public sealed class MainForm : Form
         var lblRemoteComputer = new Label
         {
             Text = "원격 업로드 대상",
-            Location = new Point(16, 278),
+            Location = new Point(16, 368),
             AutoSize = true,
+            UseCompatibleTextRendering = true,
         };
 
         _cmbRemoteComputer = new ComboBox
         {
-            Location = new Point(16, 308),
+            Location = new Point(16, 408),
             Size = new Size(380, controlHeight),
             DropDownStyle = ComboBoxStyle.DropDownList,
         };
@@ -157,7 +179,7 @@ public sealed class MainForm : Form
         var btnRemoteUpload = new Button
         {
             Text = "원격 업로드 요청",
-            Location = new Point(412, 304),
+            Location = new Point(412, 396),
             Size = new Size(200, actionHeight),
         };
         btnRemoteUpload.Click += async (_, _) => await RequestRemoteUploadAsync();
@@ -165,14 +187,15 @@ public sealed class MainForm : Form
         var lblHistory = new Label
         {
             Text = "업로드 기록 (행을 선택한 뒤 다운로드)",
-            Location = new Point(16, 364),
+            Location = new Point(16, 454),
             AutoSize = true,
+            UseCompatibleTextRendering = true,
         };
 
         _lvEntries = new ListView
         {
-            Location = new Point(16, 394),
-            Size = new Size(948, 150),
+            Location = new Point(16, 494),
+            Size = new Size(948, 112),
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
             View = View.Details,
             FullRowSelect = true,
@@ -191,14 +214,15 @@ public sealed class MainForm : Form
         var lblLog = new Label
         {
             Text = "로그",
-            Location = new Point(16, 556),
+            Location = new Point(16, 620),
             AutoSize = true,
+            UseCompatibleTextRendering = true,
             Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
         };
 
         _txtLog = new TextBox
         {
-            Location = new Point(16, 584),
+            Location = new Point(16, 658),
             Size = new Size(948, 96),
             Multiline = true,
             ScrollBars = ScrollBars.Vertical,
@@ -211,6 +235,7 @@ public sealed class MainForm : Form
             _lblUser, _lblComputer, btnLogout,
             lblGame, _cmbGames, btnAddGame, btnDeleteGame, btnRefresh,
             lblPath, _txtLocalPath, btnBrowse, btnSavePath,
+            lblExcludes, _txtExcludes, btnExcludes,
             btnUpload, btnDownload, btnDeleteEntry, btnRefreshList,
             lblRemoteComputer, _cmbRemoteComputer, btnRemoteUpload,
             lblHistory, _lvEntries, lblLog, _txtLog,
@@ -328,10 +353,13 @@ public sealed class MainForm : Form
         if (game is null)
         {
             _txtLocalPath.Text = "";
+            _txtExcludes.Text = "";
             return;
         }
 
-        _txtLocalPath.Text = _config.GameLocalPaths.TryGetValue(game.Id, out var path) ? path : "";
+        var settingPath = _config.GetGamePath(game.Id);
+        _txtLocalPath.Text = settingPath;
+        _txtExcludes.Text = BackupExclude.Summarize(_config.GetGameExcludes(game.Id));
         _ = LoadEntriesAsync();
     }
 
@@ -423,7 +451,7 @@ public sealed class MainForm : Form
         try
         {
             await _api.DeleteGameAsync(game.Id);
-            _config.GameLocalPaths.Remove(game.Id);
+            _config.RemoveGameSetting(game.Id);
             ConfigStore.Save(_config);
             Log($"게임 삭제: {game.Name}");
             await RefreshAllAsync();
@@ -449,9 +477,52 @@ public sealed class MainForm : Form
 
         if (dialog.ShowDialog(this) == DialogResult.OK)
         {
+            var previous = SelectedGame is null ? "" : _config.GetGamePath(SelectedGame.Id);
             _txtLocalPath.Text = dialog.SelectedPath;
+            if (!string.Equals(previous, dialog.SelectedPath, StringComparison.OrdinalIgnoreCase) &&
+                SelectedGame is not null)
+            {
+                var setting = _config.GetOrCreateGameSetting(SelectedGame.Id);
+                setting.ExcludeRelativePaths = setting.ExcludeRelativePaths
+                    .Where(item => File.Exists(Path.Combine(dialog.SelectedPath, item)) ||
+                                   Directory.Exists(Path.Combine(dialog.SelectedPath, item)))
+                    .ToList();
+            }
+
             SaveCurrentPath();
+            EditExcludes();
         }
+    }
+
+    private void EditExcludes()
+    {
+        var game = SelectedGame;
+        if (game is null)
+        {
+            MessageBox.Show(this, "게임을 먼저 선택하세요.", "제외 설정", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        var path = _txtLocalPath.Text.Trim();
+        if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path))
+        {
+            MessageBox.Show(this, "유효한 로컬 디렉토리를 먼저 지정하세요.", "제외 설정", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        SaveCurrentPath();
+        var setting = _config.GetOrCreateGameSetting(game.Id);
+        using var dialog = new ExcludeItemsDialog(path, setting.ExcludeRelativePaths);
+        if (dialog.ShowDialog(this) != DialogResult.OK)
+        {
+            return;
+        }
+
+        _config.SetGameExcludes(game.Id, dialog.ExcludeRelativePaths);
+        ConfigStore.Save(_config);
+        _txtExcludes.Text = BackupExclude.Summarize(_config.GetGameExcludes(game.Id));
+        var count = _config.GetGameExcludes(game.Id).Count;
+        Log($"제외 항목 저장: {game.Name} ({count}개)");
     }
 
     private void SaveCurrentPath()
@@ -466,11 +537,13 @@ public sealed class MainForm : Form
         var path = _txtLocalPath.Text.Trim();
         if (string.IsNullOrWhiteSpace(path))
         {
-            _config.GameLocalPaths.Remove(game.Id);
+            _config.RemoveGameSetting(game.Id);
+            _txtExcludes.Text = "";
         }
         else
         {
-            _config.GameLocalPaths[game.Id] = path;
+            _config.SetGamePath(game.Id, path);
+            _txtExcludes.Text = BackupExclude.Summarize(_config.GetGameExcludes(game.Id));
         }
 
         ConfigStore.Save(_config);
@@ -565,9 +638,8 @@ public sealed class MainForm : Form
 
         try
         {
-            if (!_config.GameLocalPaths.TryGetValue(request.GameId, out var localPath) ||
-                string.IsNullOrWhiteSpace(localPath) ||
-                !Directory.Exists(localPath))
+            var localPath = _config.GetGamePath(request.GameId);
+            if (string.IsNullOrWhiteSpace(localPath) || !Directory.Exists(localPath))
             {
                 throw new DirectoryNotFoundException(
                     $"'{request.GameName}'의 로컬 디렉토리가 이 컴퓨터에 설정되지 않았습니다.");
@@ -575,8 +647,9 @@ public sealed class MainForm : Form
 
             var game = _games.FirstOrDefault(g => g.Id == request.GameId)
                        ?? new GameInfo { Id = request.GameId, Name = request.GameName };
-            var localMtime = ZipHelper.GetDirectoryContentMtime(localPath);
-            var entry = await DoUploadAsync(game, localPath, localMtime);
+            var excludes = _config.GetGameExcludes(request.GameId);
+            var localMtime = ZipHelper.GetDirectoryContentMtime(localPath, excludes);
+            var entry = await DoUploadAsync(game, localPath, localMtime, excludes);
             await _api.CompleteRemoteUploadAsync(request.Id, _computerName, entry.Id);
             Log($"원격 업로드 완료. 요청 ID={request.Id}, 기록 ID={entry.Id}");
         }
@@ -615,8 +688,9 @@ public sealed class MainForm : Form
 
         try
         {
-            var localMtime = ZipHelper.GetDirectoryContentMtime(localPath);
-            await DoUploadAsync(game, localPath, localMtime);
+            var excludes = _config.GetGameExcludes(game.Id);
+            var localMtime = ZipHelper.GetDirectoryContentMtime(localPath, excludes);
+            await DoUploadAsync(game, localPath, localMtime, excludes);
         }
         catch (Exception ex)
         {
@@ -625,10 +699,17 @@ public sealed class MainForm : Form
         }
     }
 
-    private async Task<SyncEntry> DoUploadAsync(GameInfo game, string localPath, long localMtime)
+    private async Task<SyncEntry> DoUploadAsync(
+        GameInfo game,
+        string localPath,
+        long localMtime,
+        IReadOnlyCollection<string>? excludes = null)
     {
-        Log($"압축 중: {localPath}");
-        var zipPath = ZipHelper.CreateZipFromDirectory(localPath);
+        var excludeCount = excludes?.Count ?? 0;
+        Log(excludeCount > 0
+            ? $"압축 중: {localPath} (제외 {excludeCount}개)"
+            : $"압축 중: {localPath}");
+        var zipPath = ZipHelper.CreateZipFromDirectory(localPath, excludes);
         try
         {
             Log("업로드 중... (새 기록으로 저장)");
@@ -673,7 +754,7 @@ public sealed class MainForm : Form
         {
             var confirm = MessageBox.Show(
                 this,
-                $"선택한 기록(ID={entry.Id}, {entry.ComputerName})을 다운로드하면\n로컬 폴더 내용이 덮어써집니다.\n\n계속할까요?\n{localPath}",
+                $"선택한 기록(ID={entry.Id}, {entry.ComputerName})을 다운로드하면\n로컬 폴더 내용이 덮어써집니다.\n백업 제외로 지정한 파일/폴더는 유지됩니다.\n\n계속할까요?\n{localPath}",
                 "다운로드 확인",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning);
@@ -736,7 +817,8 @@ public sealed class MainForm : Form
             Log($"다운로드 중: 기록 ID={entry.Id} ({entry.ComputerName})");
             await _api.DownloadToFileAsync(entry.Id, zipPath);
             Log($"압축 해제 중: {localPath}");
-            ZipHelper.ExtractZipToDirectory(zipPath, localPath, clearExisting: true);
+            var excludes = SelectedGame is null ? null : _config.GetGameExcludes(SelectedGame.Id);
+            ZipHelper.ExtractZipToDirectory(zipPath, localPath, clearExisting: true, excludes);
             Log("다운로드 완료.");
         }
         finally
@@ -864,7 +946,14 @@ public sealed class MainForm : Form
             MinimizeBox = false,
         };
 
-        var label = new Label { Left = 16, Top = 16, Text = text, AutoSize = true };
+        var label = new Label
+        {
+            Left = 16,
+            Top = 16,
+            Text = text,
+            AutoSize = true,
+            UseCompatibleTextRendering = true,
+        };
         var input = new TextBox { Left = 16, Top = 48, Width = 380, Height = 36 };
         var ok = new Button { Text = "확인", Left = 200, Width = 90, Height = 36, Top = 100, DialogResult = DialogResult.OK };
         var cancel = new Button { Text = "취소", Left = 306, Width = 90, Height = 36, Top = 100, DialogResult = DialogResult.Cancel };

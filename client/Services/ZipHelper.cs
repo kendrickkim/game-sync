@@ -4,7 +4,7 @@ namespace GameSync.Services;
 
 public static class ZipHelper
 {
-    public static long GetDirectoryContentMtime(string directory)
+    public static long GetDirectoryContentMtime(string directory, IReadOnlyCollection<string>? excludes = null)
     {
         if (!Directory.Exists(directory))
         {
@@ -14,6 +14,11 @@ public static class ZipHelper
         long max = 0;
         foreach (var file in Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories))
         {
+            if (BackupExclude.IsExcluded(file, directory, excludes))
+            {
+                continue;
+            }
+
             var ms = new DateTimeOffset(File.GetLastWriteTimeUtc(file)).ToUnixTimeMilliseconds();
             if (ms > max)
             {
@@ -24,7 +29,10 @@ public static class ZipHelper
         return max;
     }
 
-    public static string CreateZipFromDirectory(string directory, string? tempDir = null)
+    public static string CreateZipFromDirectory(
+        string directory,
+        IReadOnlyCollection<string>? excludes = null,
+        string? tempDir = null)
     {
         if (!Directory.Exists(directory))
         {
@@ -40,11 +48,33 @@ public static class ZipHelper
             File.Delete(zipPath);
         }
 
-        ZipFile.CreateFromDirectory(directory, zipPath, CompressionLevel.Optimal, includeBaseDirectory: false);
+        using (var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+        {
+            foreach (var file in Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories))
+            {
+                if (BackupExclude.IsExcluded(file, directory, excludes))
+                {
+                    continue;
+                }
+
+                if (!BackupExclude.TryMakeRelative(directory, file, out var relative))
+                {
+                    continue;
+                }
+
+                var entryName = relative.Replace(Path.DirectorySeparatorChar, '/');
+                zip.CreateEntryFromFile(file, entryName, CompressionLevel.Optimal);
+            }
+        }
+
         return zipPath;
     }
 
-    public static void ExtractZipToDirectory(string zipPath, string targetDirectory, bool clearExisting)
+    public static void ExtractZipToDirectory(
+        string zipPath,
+        string targetDirectory,
+        bool clearExisting,
+        IReadOnlyCollection<string>? excludes = null)
     {
         if (!File.Exists(zipPath))
         {
@@ -53,10 +83,39 @@ public static class ZipHelper
 
         if (clearExisting && Directory.Exists(targetDirectory))
         {
-            Directory.Delete(targetDirectory, recursive: true);
+            ClearDirectoryPreservingExcludes(targetDirectory, excludes);
         }
 
         Directory.CreateDirectory(targetDirectory);
         ZipFile.ExtractToDirectory(zipPath, targetDirectory, overwriteFiles: true);
+    }
+
+    private static void ClearDirectoryPreservingExcludes(string directory, IReadOnlyCollection<string>? excludes)
+    {
+        foreach (var file in Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories))
+        {
+            if (BackupExclude.IsExcluded(file, directory, excludes))
+            {
+                continue;
+            }
+
+            File.SetAttributes(file, FileAttributes.Normal);
+            File.Delete(file);
+        }
+
+        foreach (var dir in Directory
+                     .EnumerateDirectories(directory, "*", SearchOption.AllDirectories)
+                     .OrderByDescending(path => path.Length))
+        {
+            if (BackupExclude.IsExcluded(dir, directory, excludes))
+            {
+                continue;
+            }
+
+            if (!Directory.EnumerateFileSystemEntries(dir).Any())
+            {
+                Directory.Delete(dir, recursive: false);
+            }
+        }
     }
 }

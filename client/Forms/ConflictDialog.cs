@@ -26,8 +26,9 @@ public sealed class ConflictDialog : Form
         var label = new Label
         {
             AutoSize = false,
+            UseCompatibleTextRendering = true,
             Location = new Point(16, 16),
-            Size = new Size(440, 110),
+            Size = new Size(440, 120),
             Text =
                 $"게임 '{gameName}'의 로컬 데이터와 서버 데이터가 다릅니다.\n\n" +
                 $"로컬 최신: {localTime:yyyy-MM-dd HH:mm:ss}\n" +

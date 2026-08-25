@@ -23,32 +23,32 @@ public sealed class LoginForm : Form
         MaximizeBox = false;
         MinimizeBox = false;
         StartPosition = FormStartPosition.CenterScreen;
-        ClientSize = new Size(440, 330);
+        ClientSize = new Size(440, 348);
         Icon = AppIcon.Value;
 
         const int fieldHeight = 36;
         const int buttonHeight = 40;
 
-        var lblServer = new Label { Text = "서버 URL", Location = new Point(24, 20), AutoSize = true };
+        var lblServer = new Label { Text = "서버 URL", Location = new Point(24, 18), AutoSize = true, UseCompatibleTextRendering = true };
         _txtServer = new TextBox
         {
-            Location = new Point(24, 44),
+            Location = new Point(24, 52),
             Size = new Size(380, fieldHeight),
             Text = config.ServerUrl,
         };
 
-        var lblUser = new Label { Text = "아이디", Location = new Point(24, 92), AutoSize = true };
+        var lblUser = new Label { Text = "아이디", Location = new Point(24, 90), AutoSize = true, UseCompatibleTextRendering = true };
         _txtUsername = new TextBox
         {
-            Location = new Point(24, 116),
+            Location = new Point(24, 124),
             Size = new Size(380, fieldHeight),
             Text = config.Username ?? "",
         };
 
-        var lblPass = new Label { Text = "비밀번호", Location = new Point(24, 164), AutoSize = true };
+        var lblPass = new Label { Text = "비밀번호", Location = new Point(24, 162), AutoSize = true, UseCompatibleTextRendering = true };
         _txtPassword = new TextBox
         {
-            Location = new Point(24, 188),
+            Location = new Point(24, 196),
             Size = new Size(380, fieldHeight),
             UseSystemPasswordChar = true,
         };
@@ -71,8 +71,10 @@ public sealed class LoginForm : Form
 
         _lblStatus = new Label
         {
-            Location = new Point(24, 296),
-            Size = new Size(380, 24),
+            Location = new Point(24, 292),
+            Size = new Size(380, 40),
+            AutoSize = false,
+            UseCompatibleTextRendering = true,
             ForeColor = Color.DarkRed,
         };
 

@@ -33,6 +33,7 @@ dotnet publish GameSync.csproj -c Release -r win-x64 --self-contained true \
 
 - 계정 로그인 / 회원가입
 - 게임별 로컬 디렉토리 매핑 (설정: `%AppData%/GameSync/config.json`)
+- 게임별로 백업에서 제외할 파일·폴더 지정 (디렉토리 선택 후 제외 설정 대화상자)
 - 수동 업로드 시 기록 생성 → 기록을 선택해 다운로드
 - 같은 계정으로 로그인된 다른 PC에 원격 업로드 요청
 - 컴퓨터명은 `Environment.MachineName` 사용
