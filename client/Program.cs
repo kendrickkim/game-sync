@@ -1,4 +1,3 @@
-using System.Threading;
 using GameSync.Forms;
 using GameSync.Services;
 
@@ -6,23 +5,28 @@ namespace GameSync;
 
 static class Program
 {
-    private const string SingleInstanceMutexName = "Local\\GameSync.WinForms.SingleInstance";
-
     [STAThread]
     static void Main()
     {
-        using var mutex = new Mutex(true, SingleInstanceMutexName, out var createdNew);
-        if (!createdNew)
+        if (!SingleInstance.TryAcquireOrNotifyExisting())
         {
-            MessageBox.Show(
-                "Game Sync가 이미 실행 중입니다.",
-                "Game Sync",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
             return;
         }
 
+        try
+        {
+            RunApplication();
+        }
+        finally
+        {
+            SingleInstance.Release();
+        }
+    }
+
+    static void RunApplication()
+    {
         ApplicationConfiguration.Initialize();
+        SingleInstance.BindUi();
 
         var config = ConfigStore.Load();
 

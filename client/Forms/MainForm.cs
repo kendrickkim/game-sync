@@ -34,8 +34,8 @@ public sealed class MainForm : Form
 
         Text = "Game Sync";
         StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(960, 800);
-        ClientSize = new Size(980, 776);
+        MinimumSize = new Size(1060, 1000);
+        ClientSize = new Size(1080, 976);
         Icon = LoadAppIcon();
 
         const int controlHeight = 36;
@@ -60,7 +60,7 @@ public sealed class MainForm : Form
         var btnLogout = new Button
         {
             Text = "로그아웃",
-            Location = new Point(852, 12),
+            Location = new Point(952, 12),
             Size = new Size(112, controlHeight),
             Anchor = AnchorStyles.Top | AnchorStyles.Right,
         };
@@ -89,14 +89,14 @@ public sealed class MainForm : Form
         _txtLocalPath = new TextBox
         {
             Location = new Point(16, 176),
-            Size = new Size(680, controlHeight),
+            Size = new Size(780, controlHeight),
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
         };
 
         var btnBrowse = new Button
         {
             Text = "찾아보기",
-            Location = new Point(708, 176),
+            Location = new Point(808, 176),
             Size = new Size(112, controlHeight),
             Anchor = AnchorStyles.Top | AnchorStyles.Right,
         };
@@ -105,7 +105,7 @@ public sealed class MainForm : Form
         var btnSavePath = new Button
         {
             Text = "경로 저장",
-            Location = new Point(828, 176),
+            Location = new Point(928, 176),
             Size = new Size(112, controlHeight),
             Anchor = AnchorStyles.Top | AnchorStyles.Right,
         };
@@ -115,7 +115,7 @@ public sealed class MainForm : Form
         _txtExcludes = new TextBox
         {
             Location = new Point(16, 266),
-            Size = new Size(800, controlHeight),
+            Size = new Size(900, controlHeight),
             ReadOnly = true,
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
         };
@@ -123,7 +123,7 @@ public sealed class MainForm : Form
         var btnExcludes = new Button
         {
             Text = "제외 설정",
-            Location = new Point(828, 266),
+            Location = new Point(928, 266),
             Size = new Size(112, controlHeight),
             Anchor = AnchorStyles.Top | AnchorStyles.Right,
         };
@@ -195,7 +195,7 @@ public sealed class MainForm : Form
         _lvEntries = new ListView
         {
             Location = new Point(16, 494),
-            Size = new Size(948, 112),
+            Size = new Size(1048, 312),
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
             View = View.Details,
             FullRowSelect = true,
@@ -208,13 +208,13 @@ public sealed class MainForm : Form
         _lvEntries.Columns.Add("컴퓨터", 140);
         _lvEntries.Columns.Add("크기", 90);
         _lvEntries.Columns.Add("콘텐츠 mtime", 160);
-        _lvEntries.Columns.Add("로컬 경로(업로드 시)", 300);
+        _lvEntries.Columns.Add("로컬 경로(업로드 시)", 400);
         _lvEntries.DoubleClick += async (_, _) => await DownloadSelectedAsync();
 
         var lblLog = new Label
         {
             Text = "로그",
-            Location = new Point(16, 620),
+            Location = new Point(16, 820),
             AutoSize = true,
             UseCompatibleTextRendering = true,
             Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
@@ -222,8 +222,8 @@ public sealed class MainForm : Form
 
         _txtLog = new TextBox
         {
-            Location = new Point(16, 658),
-            Size = new Size(948, 96),
+            Location = new Point(16, 858),
+            Size = new Size(1048, 96),
             Multiline = true,
             ScrollBars = ScrollBars.Vertical,
             ReadOnly = true,
@@ -904,13 +904,19 @@ public sealed class MainForm : Form
         }
     }
 
-    private void RestoreFromTray()
+    internal void RestoreFromTray()
     {
         ShowInTaskbar = true;
         Show();
-        WindowState = FormWindowState.Normal;
+        if (WindowState == FormWindowState.Minimized)
+        {
+            WindowState = FormWindowState.Normal;
+        }
+
         Activate();
         BringToFront();
+        TopMost = true;
+        TopMost = false;
     }
 
     private void ExitApplication()
